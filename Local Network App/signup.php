@@ -294,7 +294,7 @@
 </div>
 
 <?php 
-        
+        require 'DatabaseHandler.php';
     if(isset($_POST['submit']))
     {
         $uid = trim($_POST['userId']);
@@ -319,20 +319,17 @@
 
     function register($uid, $pwd, $fname, $lname, $dob, $country)
     {
-        $servername = "localhost:3307";
-        $username = "root";
-        $password = "";
       try 
       {
-        $conn = new PDO("mysql:host=$servername;dbname=test", $username, $password);
-            // set the PDO error mode to exception
-        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        //echo "CONNECTED";
-
+        
+        $db = new DatabaseHandler();
         $sql = "SELECT email_id FROM login WHERE email_id = '$uid'";
-        $q = $conn->query($sql);
-        $q->setFetchMode(PDO::FETCH_ASSOC);
-        $result = $q->fetch();
+        $q = $db->execute_query($sql);
+        $result = $db->fetch_data($q);
+
+        $hash = crypt($uid,'$6$user$');
+
+        $id = $hash;
 
         $uid2 = $result['email_id'];
         
@@ -342,9 +339,9 @@
         }
         else
         {
-            $sql = "INSERT INTO login(email_id, password, fname, lname, dob, country) VALUES ('$uid', '$pwd', '$fname', '$lname', '$dob', '$country')";
+            $sql = "INSERT INTO login(id,email_id, password, fname, lname, dob, country) VALUES ('$id','$uid', '$pwd', '$fname', '$lname', '$dob', '$country')";
             // use exec() because no results are returned
-            $conn->exec($sql);
+            $db->execute_update($sql);
             echo "New record created successfully";
 
             echo "<script> window.location.assign('index.php'); </script>";

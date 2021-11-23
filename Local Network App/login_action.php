@@ -1,31 +1,22 @@
 <?php 
+  require 'DatabaseHandler.php';
 	if (isset($_POST['login'])) 
 	{
-		
-		$servername = "localhost:3307";
-		$username = "root";
-		$password = "";
+		$db = new DatabaseHandler();
+
 		$uid = $_POST['username'];
 		$pwd = $_POST['pass'];
 
 		try 
 		{
-		    $conn = new PDO("mysql:host=$servername;dbname=test", $username, $password);
-		    // set the PDO error mode to exception
-		    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-		    //echo "Connected successfully"; 
-
-		    $sql = "SELECT email_id,password FROM login WHERE email_id = '$uid' AND password = '$pwd'";
 		    
-		    $stmt = $conn->prepare($sql); 
-			$result = $stmt->execute();
+		    $sql = "SELECT id,email_id,password FROM login WHERE email_id = '$uid' AND password = '$pwd'";
+		    
+		    $result = $db->execute_update_prepared($sql);
 		
-			$rows = $stmt->fetchAll(); // assuming $result == true
+			$rows = $result->fetchAll(); // assuming $result == true
 
 			$n = count($rows);
-			//echo "" . $n;
-
-
 			if ($n > 0)
 			{
 				//echo "LOGIN SUCCESSFULL";
@@ -34,6 +25,7 @@
 
 				$_SESSION['email_id'] = $uid;
 				$_SESSION['time']     = time();
+				$_SESSION['id'] = $rows[0]['id'];
 				//echo $_SESSION['email_id'];
 				//echo "<script> window.location.assign('home.php'); </script>";
 				header("Location: home2.php");

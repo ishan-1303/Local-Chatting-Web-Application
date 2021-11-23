@@ -1,5 +1,9 @@
 	<?php
+  require 'DatabaseHandler.php';
 		session_start();
+
+    $db = new DatabaseHandler();
+
 		$uid = $_SESSION['email_id'];
 
 		if(empty($uid))
@@ -11,19 +15,10 @@
 		}
 		else
 		{
-			$servername = "localhost:3307";
-			$username = "root";
-			$password = "";
-			$conn = new PDO("mysql:host=$servername;dbname=test", $username, $password);
-		    // set the PDO error mode to exception
-		    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-		    //echo "Connected successfully"; 
-
-		    $sql = "SELECT fname,lname,country,dob,active,profile FROM login WHERE email_id = '$uid'";
+	      $sql = "SELECT fname,lname,country,dob,active,profile FROM login WHERE email_id = '$uid'";
 		    
-		    $q = $conn->query($sql);
-			 $q->setFetchMode(PDO::FETCH_ASSOC);
-			 $result = $q->fetch();
+	      $q = $db->execute_query($sql);
+        $result = $db->fetch_data($q);
 
 			$fn = $result['fname'];
 			$ln = $result['lname'];

@@ -13,9 +13,9 @@
     function doRefresh(){
         $("#rel").load("chat.php");
     }
-    $(function() {
-        setInterval(doRefresh, 1000);
-    });
+    // $(function() {
+    //     setInterval(doRefresh, 1000);
+    // });
 </script>
   <style>
     /* Set height of the grid so .sidenav can be 100% (adjust if needed) */
@@ -54,69 +54,57 @@
 </head>
 <body>
 
-<form action = "home2.php" method = "post" >
+<form action = "home2.php" method = "post" enctype="multipart/form-data">
         <div class="col-sm-9">
           <input type = "text" name = "msgtext"  class="fill-width" placeholder="type here">
           <button type="submit" name="send"  class="fill"> Post </button>
-          
+          <input type="file" name="fileToUpload" id="fileToUpload" accept="image/png, image/gif, image/jpeg">
         </div>
     </form>
 <div id = "rel">
 
 <?php 
+ require 'DatabaseHandler.php';
       session_start();
       $uid = $_SESSION['email_id'];
       //echo $uid;
       try
       {
-        $servername = "localhost:3307";
-        $username = "root";
-        $password = "";
-        $conn = new PDO("mysql:host=$servername;dbname=test", $username, $password);
-        // set the PDO error mode to exception
-        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        //echo "Connected successfully"; 
-
-        $sql = "SELECT username,fname,lname,message,date FROM chat ORDER BY id DESC";
         
-        $q = $conn->query($sql);
-        $q->setFetchMode(PDO::FETCH_ASSOC);
-       
+        $db = new DatabaseHandler();
 
-        while($result = $q->fetch())
+        $sql = "SELECT id,username,fname,lname,message,date, image, `like` FROM chat ORDER BY id DESC";
+        
+        $q = $db->execute_query($sql);
+
+        while($result = $db->fetch_data($q))
         {
             $eid = $result['username'];
             $fn = $result['fname'];
             $ln = $result['lname'];
             $msg = $result['message'];
             $time = $result['date'];
+            $image = $result['image'];
+            $likeCount = $result['like'];
+            $id = $result['id'];
 
             $sql2 = "SELECT profile from login WHERE email_id='$eid'";
-            $q2 = $conn->query($sql2);
-            $q2->setFetchMode(PDO::FETCH_ASSOC);
-            $result2 = $q2->fetch();
+            $q2 = $db->execute_query($sql2);
+            $result2 = $db->fetch_data($q2);
 
             $path = $result2['profile'];
-            // if($uid == $eid)
-            // {
-            //     $c = "container1 darker";
-            //     $t = "time-right";
-            //     $msgp = "msgr";
-            // }
-            // else
-            // {
-            //     $c = "container1";
-            //     $t = "time-left";
-            //     $msgp = "msgl";
-            // }
+            #echo $path;
+            echo "<div class=\"col-sm-9\">";
+            echo "<h3> <img src=\"" . $path . "\"  width=\"40\" height=\"40\"> " . $fn . " ". $ln . "</h3>";
+            if($image != "" || $image != NULL) {
+              echo "<img src=\"" . $image . "\" width=\"400\">";
+            }
+            echo "<p>  " . $msg . "</p>";
 
-            echo "
-                  <div class=\"col-sm-9\">
-                   <h3> <img src=\"" . $path . "\"  width=\"40\" height=\"40\"> " . $fn . " ". $ln . "</h3>
-                  <p>  " . $msg . "</p>
-                  <h5><span class=\"glyphicon glyphicon-time\"></span> $time</h5>
-                  <hr></div> 
-                 ";
+            echo "<h5><span class=\"glyphicon glyphicon-time\"></span> $time</h5>";
+
+          echo "<label><a href=\"home2.php?like=" . $likeCount . "&post_id=" . $id . "\"> <input type=\"radio\" name=\"reaction\" value=\"Like!\" > " . $likeCount . " Like! </a></label>";
+            echo "<hr></div> ";
         }
       }
       catch(PDOException $e)

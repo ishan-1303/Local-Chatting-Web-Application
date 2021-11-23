@@ -60,7 +60,7 @@
       //echo $uid;
       try
       {
-        $servername = "localhost:3307";
+        $servername = "localhost:3306";
         $username = "root";
         $password = "";
         $conn = new PDO("mysql:host=$servername;dbname=test", $username, $password);

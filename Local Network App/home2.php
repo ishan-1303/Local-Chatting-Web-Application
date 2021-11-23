@@ -1,5 +1,9 @@
 	<?php
+  require 'DatabaseHandler.php';
+
 		session_start();
+    $db = new DatabaseHandler();
+
 		$uid = $_SESSION['email_id'];
 
 		if(empty($uid))
@@ -11,29 +15,91 @@
 		}
 		else
 		{
-			$servername = "localhost:3307";
-			$username = "root";
-			$password = "";
-			$conn = new PDO("mysql:host=$servername;dbname=test", $username, $password);
-		    // set the PDO error mode to exception
-		    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-		    //echo "Connected successfully"; 
 
-		    $sql = "SELECT fname,lname FROM login WHERE email_id = '$uid'";
+	    $sql = "SELECT fname,lname FROM login WHERE email_id = '$uid'";
 		    
-		    $q = $conn->query($sql);
-			$q->setFetchMode(PDO::FETCH_ASSOC);
-			$result = $q->fetch();
+	    $result = $db->execute_query($sql);
+			$result = $db->fetch_data($result);
 
 			$fn = $result['fname'];
 			$ln = $result['lname'];
 
-			$sql = "SELECT fname,lname FROM login WHERE email_id NOT IN('$uid')";
-			$q = $conn->query($sql);
-			$q->setFetchMode(PDO::FETCH_ASSOC);
-		}
+			// $sql = "SELECT fname,lname FROM login WHERE email_id NOT IN('$uid')";
+			// $q = $conn->query($sql);
+			// $q->setFetchMode(PDO::FETCH_ASSOC);
 
-		//echo "WELCOME " . $fn . " " . $ln;
+      if (isset($_GET['like'])) {
+        echo "here" . $_GET['like']++;
+        $sql = "UPDATE chat SET `like`='" . $_GET['like']. "' WHERE id=" . $_GET['post_id'];
+        $db->execute_update($sql);
+      }        
+        
+		}
+    if(isset($_POST['send']))
+        {
+          @sendfun();
+        }
+
+        function sendfun()
+        {
+          try
+          {
+            $db = new DatabaseHandler();
+            $msg = trim($_POST['msgtext']);
+            $target_file = basename($_FILES["fileToUpload"]["name"]);
+            $imageFileType = strtolower(pathinfo($target_file,PATHINFO_EXTENSION));
+            
+            $id = $_SESSION['id'];
+
+            $path = $_FILES['fileToUpload']['name'];
+            $extension = pathinfo($path, PATHINFO_EXTENSION);
+            $target_dir = "media/";
+            $path = $target_dir . "" . $id . "/" . $target_file;
+            $path2 = $target_dir . "" . $id;
+            mkdir("" . $path2, 0777,true);
+            #echo $extension;
+            if(empty($msg) && (empty($target_file)  || (strcasecmp($extension ,'jpg') == 1 && strcasecmp($extension ,'jpeg') == 1 && strcasecmp($extension ,'png') == 1 && strcasecmp($extension ,'gif') == 1)))
+            {
+                echo "no msg or image";
+            }
+            else
+            {
+              move_uploaded_file($_FILES["fileToUpload"]["tmp_name"], $path);
+              $path = $target_dir . "" . $id . "/" . $target_file;
+              $numbers = mt_rand(1,1000000000);
+              rename($path, $path2 . "/image" . $numbers . ".jpg");
+              
+              $path = str_replace($path, $path2 . "/image" . $numbers . ".jpg", $path);
+              $time = date("Y-m-d H:i:s");
+              $uid = $_SESSION['email_id'];
+              $id = $_SESSION['id'];
+
+              $sql = "SELECT fname,lname FROM login WHERE email_id = '$uid'";
+              $q = $db->execute_query($sql);
+              $result = $db->fetch_data($q);
+
+              $fn = $result['fname'];
+              $ln = $result['lname'];
+              if(!empty($target_file)) {                
+                $sql = "INSERT INTO chat(username,fname,lname,message,image,date) VALUES ('$uid', '$fn', '$ln', '$msg', '$path',CURRENT_TIME())";
+              
+              // use exec() because no results are returned
+                $db->execute_update($sql);
+              }
+              else {
+                $sql = "INSERT INTO chat(username,fname,lname,message,date) VALUES ('$uid', '$fn', '$ln', '$msg',CURRENT_TIME())";
+              
+              // use exec() because no results are returned
+                $db->execute_update($sql);
+              }
+              echo "New record created successfully";
+            }
+          }
+           catch(PDOException $e)
+          {
+            echo "Connection failed: " . $e->getMessage();
+          }
+        }
 	?>
 
 
@@ -88,6 +154,9 @@
 	        {
 	            $("#posts").load("chat2.php");
 	        });
+          if ( window.history.replaceState ) {
+              window.history.replaceState( null, null, window.location.href );
+          }
 	  </script>
 </head>
 <body>
@@ -115,51 +184,7 @@
 <button id="lo" name="lo" > <a href="logout.php"> LOG OUT </a></button>
 	
 	<?php
-        if(isset($_POST['send']))
-        {
-          sendfun();
-        }
-
-        function sendfun()
-        {
-          try
-          {
-            $msg = trim($_POST['msgtext']);
-
-            $time = date("Y-m-d H:i:s");
-            if(empty($msg))
-            {
-                echo "msg empty";
-            }
-            else
-            {
-              $uid = $_SESSION['email_id'];
-              $servername = "localhost:3307";
-              $username = "root";
-              $password = "";
-              $conn = new PDO("mysql:host=$servername;dbname=test", $username, $password);
-              // set the PDO error mode to exception
-              $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-              $sql = "SELECT fname,lname FROM login WHERE email_id = '$uid'";
-              $q = $conn->query($sql);
-              $q->setFetchMode(PDO::FETCH_ASSOC);
-              $result = $q->fetch();
-
-              $fn = $result['fname'];
-              $ln = $result['lname'];
-
-              $sql = "INSERT INTO chat(username,fname,lname,message,date) VALUES ('$uid', '$fn', '$ln', '$msg', CURRENT_TIME())";
-              // use exec() because no results are returned
-              $conn->exec($sql);
-              echo "New record created successfully";
-            }
-          }
-           catch(PDOException $e)
-          {
-            echo "Connection failed: " . $e->getMessage();
-          }
-        }
+        
       ?>
 </body>
 </html>
